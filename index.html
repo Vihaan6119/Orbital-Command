@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORBITAL COMMAND | Live Space Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --bg-primary: #050508;
+            --bg-secondary: #0a0a12;
+            --bg-card: rgba(10, 15, 30, 0.7);
+            --cyan: #00f0ff;
+            --cyan-dim: rgba(0, 240, 255, 0.15);
+            --orange: #ff6b35;
+            --green: #00ff88;
+            --red: #ff0044;
+            --yellow: #ffd700;
+            --text-primary: #e0e0e0;
+            --text-secondary: #8899aa;
+            --border: rgba(0, 240, 255, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Scanline overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.3;
+        }
+
+        /* Starfield Canvas */
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--cyan);
+            border-radius: 4px;
+        }
+
+        /* Layout */
+        .app {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--cyan);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 20px var(--cyan-dim);
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px var(--cyan-dim); }
+            50% { box-shadow: 0 0 40px var(--cyan-dim), 0 0 60px var(--cyan-dim); }
+        }
+
+        .logo-text h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            letter-spacing: 4px;
+            color: var(--cyan);
+            text-shadow: 0 0 20px var(--cyan-dim);
+        }
+
+        .logo-text p {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--text-secondary);
+            font-size: 12px;
+            letter-spacing: 2px;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 25px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+            animation: blink 2s infinite;
+        }
+
+        .status-dot.warning { background: var(--orange); box-shadow: 0 0 10px var(--orange); }
+        .status-dot.danger { background: var(--red); box-shadow: 0 0 10px var(--red); }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Grid */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            opacity: 0.5;
+        }
+
+        .card:hover {
+            border-color: var(--cyan);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            letter-spacing: 2px;
+            color: var(--cyan);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-badge {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid var(--border);
+            color: var(--cyan);
+        }
+
+        /* ISS Tracker */
+        .iss-map {
+            width: 100%;
+            height: 250px;
+            background: radial-gradient(circle at center, #0a1628 0%, #050508 100%);
+            border-radius: 8px;
+            position: relative;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .earth-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .iss-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 20px var(--cyan), 0 0 40px var(--cyan);
+            transform: translate(-50%, -50%);
+            transition: all 1s linear;
+        }
+
+        .iss-trail {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(0, 240, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .iss-coords {
+            font-family: 'Share Tech Mono', monospace;
+            margin-top: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .coord-box {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid var(--cyan);
+        }
+
+        .coord-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .coord-value {
+            font-size: 18px;
+            color: var(--cyan);
+            margin-top: 4px;
+        }
+
+        /* Countdown */
+        .countdown-display {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+
+        .countdown-unit {
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .countdown-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--orange);
+            text-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+            line-height: 1;
+        }
+
+        .countdown-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .launch-info {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 107, 53, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 107, 53, 0.2);
+        }
+
+        .launch-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            color: var(--orange);
+            margin-bottom: 8px;
+        }
+
+        .launch-details {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* NEO Radar */
+        .neo-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .neo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            border-left: 3px solid var(--green);
+            transition: all 0.2s;
+        }
+
+        .neo-item:hover {
+            background: rgba(0,0,0,0.4);
+            transform: translateX(5px);
+        }
+
+        .neo-item.hazard {
+            border-left-color: var(--red);
+            background: rgba(255, 0, 68, 0.05);
+            animation: alert-pulse 3s infinite;
+        }
+
+        @keyframes alert-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 0, 68, 0); }
+            50% { box-shadow: 0 0 10px 0 rgba(255, 0, 68, 0.2); }
+        }
+
+        .neo-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .neo-size {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .neo-distance {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            color: var(--cyan);
+        }
+
+        .neo-hazard-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            background: var(--red);
+            color: white;
+            border-radius: 4px;
+            margin-left: 8px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* APOD */
+        .apod-container {
+            position: relative;
+        }
+
+        .apod-image {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: transform 0.3s;
+        }
+
+        .apod-image:hover {
+            transform: scale(1.02);
+        }
+
+        .apod-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            color: var(--yellow);
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+
+        .apod-date {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .apod-desc {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .apod-nav {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            background: var(--cyan);
+            color: var(--bg-primary);
+            box-shadow: 0 0 20px var(--cyan-dim);
+        }
+
+        .btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Solar System */
+        .solar-system {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sun {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #ffd700, #ff8c00);
+            border-radius: 50%;
+            box-shadow: 0 0 40px #ff8c00, 0 0 80px rgba(255, 140, 0, 0.3);
+            position: relative;
+            z-index: 10;
+        }
+
+        .orbit {
+            position: absolute;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+        }
+
+        .planet {
+            position: absolute;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .planet-label {
+            position: absolute;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Mission Log */
+        .log-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .log-input {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 16px;
+        }
+
+        .log-input:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 10px var(--cyan-dim);
+        }
+
+        .log-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            border-left: 2px solid var(--yellow);
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .log-time {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            margin-left: 10px;
+        }
+
+        .delete-log {
+            background: none;
+            border: none;
+            color: var(--red);
+            cursor: pointer;
+            font-size: 18px;
+            margin-left: 10px;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .delete-log:hover { opacity: 1; }
+
+        /* System Diagnostics */
+        .diag-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .diag-item {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .diag-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .diag-bar {
+            height: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .diag-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .diag-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .diag-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            margin-top: 5px;
+            color: var(--cyan);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .footer a {
+            color: var(--cyan);
+            text-decoration: none;
+        }
+
+        /* Loading */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .loading-text {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--text-secondary);
+            font-size: 14px;
+            text-align: center;
+            padding: 40px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header { flex-direction: column; text-align: center; }
+            .dashboard { grid-template-columns: 1fr; }
+            .countdown-number { font-size: 32px; }
+            .diag-grid { grid-template-columns: 1fr; }
+            .iss-coords { grid-template-columns: 1fr; }
+        }
+
+        /* Intro overlay */
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+
+        #intro-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .intro-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            color: var(--cyan);
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 40px var(--cyan-dim);
+        }
+
+        .intro-line {
+            width: 0;
+            height: 2px;
+            background: var(--cyan);
+            margin-bottom: 30px;
+            animation: lineExpand 1.5s ease forwards 0.5s;
+        }
+
+        @keyframes lineExpand {
+            to { width: 300px; }
+        }
+
+        .intro-text {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--text-secondary);
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+
+        .intro-btn {
+            margin-top: 40px;
+            padding: 15px 40px;
+            font-size: 16px;
+        }
+
+        /* Typing effect */
+        .typing {
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid var(--cyan);
+            animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: var(--cyan); }
+        }
+
+        /* Full width cards */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 768px) {
+            .full-width { grid-column: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Intro Overlay -->
+    <div id="intro-overlay">
+        <div class="intro-logo">ORBITAL COMMAND</div>
+        <div class="intro-line"></div>
+        <div class="intro-text typing">Initializing space monitoring systems...</div>
+        <button class="btn intro-btn" onclick="enterSystem()">INITIALIZE SYSTEMS</button>
+    </div>
+
+    <!-- Starfield Canvas -->
+    <canvas id="starfield"></canvas>
+
+    <!-- Main App -->
+    <div class="app" id="app" style="opacity: 0; transition: opacity 1s;">
+        
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">🛰️</div>
+                <div class="logo-text">
+                    <h1>ORBITAL COMMAND</h1>
+                    <p>NASA PARTNERSHIP NETWORK // STARDANCE CHALLENGE 2026</p>
+                </div>
+            </div>
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    <span>ISS LINK: ACTIVE</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot" id="api-status"></div>
+                    <span id="api-text">NASA API: CONNECTING</span>
+                </div>
+                <div class="status-item">
+                    <span id="clock">00:00:00 UTC</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard -->
+        <div class="dashboard">
+
+            <!-- ISS Tracker -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">🛰️ ISS TRACKER</div>
+                    <div class="card-badge">LIVE</div>
+                </div>
+                <div class="iss-map" id="iss-map">
+                    <div class="earth-grid"></div>
+                    <div class="iss-dot" id="iss-dot"></div>
+                </div>
+                <div class="iss-coords">
+                    <div class="coord-box">
+                        <div class="coord-label">Latitude</div>
+                        <div class="coord-value" id="iss-lat">--.----</div>
+                    </div>
+                    <div class="coord-box">
+                        <div class="coord-label">Longitude</div>
+                        <div class="coord-value" id="iss-lon">--.----</div>
+                    </div>
+                    <div class="coord-box">
+                        <div class="coord-label">Altitude</div>
+                        <div class="coord-value" id="iss-alt">408 km</div>
+                    </div>
+                    <div class="coord-box">
+                        <div class="coord-label">Velocity</div>
+                        <div class="coord-value" id="iss-vel">27,600 km/h</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Launch Countdown -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">🚀 NEXT LAUNCH</div>
+                    <div class="card-badge">SPACEX API</div>
+                </div>
+                <div id="launch-container">
+                    <div class="loading-text">Acquiring launch data...</div>
+                </div>
+            </div>
+
+            <!-- NEO Radar -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">☄️ NEO RADAR</div>
+                    <div class="card-badge" id="neo-count">SCANNING</div>
+                </div>
+                <div class="neo-list" id="neo-list">
+                    <div class="loading-text">Scanning near-earth objects...</div>
+                </div>
+            </div>
+
+            <!-- APOD -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">🌌 APOD EXPLORER</div>
+                    <div class="card-badge">NASA</div>
+                </div>
+                <div id="apod-container">
+                    <div class="loading-text">Loading astronomy picture...</div>
+                </div>
+            </div>
+
+            <!-- Solar System -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <div class="card-title">🪐 SOLAR SYSTEM</div>
+                    <div class="card-badge">INTERACTIVE</div>
+                </div>
+                <div class="solar-system" id="solar-system">
+                    <div class="sun"></div>
+                </div>
+                <p style="text-align: center; color: var(--text-secondary); font-size: 13px; margin-top: 10px;">
+                    Planets orbit at relative speeds. Hover to see names.
+                </p>
+            </div>
+
+            <!-- Mission Log -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">📋 MISSION LOG</div>
+                    <div class="card-badge">LOCAL</div>
+                </div>
+                <div class="log-input-group">
+                    <input type="text" class="log-input" id="log-input" placeholder="Enter mission note..." maxlength="100">
+                    <button class="btn" onclick="addLog()">LOG</button>
+                </div>
+                <div class="log-list" id="log-list">
+                    <div style="color: var(--text-secondary); font-size: 14px; text-align: center; padding: 20px;">
+                        No mission logs recorded. Start logging your observations.
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Diagnostics -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">⚡ SYSTEM STATUS</div>
+                    <div class="card-badge">DIAGNOSTIC</div>
+                </div>
+                <div class="diag-grid">
+                    <div class="diag-item">
+                        <div class="diag-label">Signal Strength</div>
+                        <div class="diag-bar"><div class="diag-fill" style="width: 92%; background: var(--green);"></div></div>
+                        <div class="diag-value">92%</div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-label">Data Stream</div>
+                        <div class="diag-bar"><div class="diag-fill" style="width: 78%; background: var(--cyan);"></div></div>
+                        <div class="diag-value">78 MB/s</div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-label">Thermal Status</div>
+                        <div class="diag-bar"><div class="diag-fill" style="width: 34%; background: var(--yellow);"></div></div>
+                        <div class="diag-value">34°C</div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-label">Power Grid</div>
+                        <div class="diag-bar"><div class="diag-fill" style="width: 96%; background: var(--green);"></div></div>
+                        <div class="diag-value">96% STABLE</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>ORBITAL COMMAND v1.0 // BUILT FOR STARDANCE CHALLENGE 2026</p>
+            <p style="margin-top: 8px;">
+                Data sources: <a href="https://api.nasa.gov" target="_blank">NASA Open APIs</a> | 
+                <a href="http://open-notify.org" target="_blank">Open Notify</a> | 
+                <a href="https://github.com/r-spacex/SpaceX-API" target="_blank">SpaceX API</a>
+            </p>
+            <p style="margin-top: 8px; opacity: 0.6;">Made with 🚀 and ☕ by a teen builder</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // ==================== STARFIELD ====================
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        let mouseX = 0, mouseY = 0;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        class Star {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.z = Math.random() * 2 + 0.5;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.opacity = Math.random() * 0.8 + 0.2;
+                this.twinkleSpeed = Math.random() * 0.02 + 0.005;
+                this.twinklePhase = Math.random() * Math.PI * 2;
+            }
+            update() {
+                this.twinklePhase += this.twinkleSpeed;
+                const twinkle = Math.sin(this.twinklePhase) * 0.3 + 0.7;
+                
+                // Parallax effect
+                const parallaxX = (mouseX - canvas.width/2) * 0.02 * this.z;
+                const parallaxY = (mouseY - canvas.height/2) * 0.02 * this.z;
+                
+                ctx.beginPath();
+                ctx.arc(this.x + parallaxX, this.y + parallaxY, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity * twinkle})`;
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 200; i++) stars.push(new Star());
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => star.update());
+            requestAnimationFrame(animateStars);
+        }
+        animateStars();
+
+        // ==================== INTRO ====================
+        function enterSystem() {
+            document.getElementById('intro-overlay').classList.add('hidden');
+            document.getElementById('app').style.opacity = '1';
+            initAll();
+        }
+
+        // ==================== CLOCK ====================
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = 
+                now.toISOString().split('T')[1].split('.')[0] + ' UTC';
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ==================== ISS TRACKER ====================
+        let issTrail = [];
+        async function updateISS() {
+            try {
+                const res = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
+                const data = await res.json();
+                const latitude = data.latitude;
+                const longitude = data.longitude;
+                
+                document.getElementById('iss-lat').textContent = math.round(data.latitude, 4) + ' km';
+                document.getElementById('iss-lan').textContent = math.round(data.velocity).toLocalString() + ' Km/h';
+                
+                // Map to grid (simplified mercator)
+                const map = document.getElementById('iss-map');
+                const x = ((parseFloat(longitude) + 180) / 360) * 100;
+                const y = ((90 - parseFloat(latitude)) / 180) * 100;
+                
+                const dot = document.getElementById('iss-dot');
+                dot.style.left = x + '%';
+                dot.style.top = y + '%';
+                
+                // Add trail
+                const trail = document.createElement('div');
+                trail.className = 'iss-trail';
+                trail.style.left = x + '%';
+                trail.style.top = y + '%';
+                map.appendChild(trail);
+                issTrail.push(trail);
+                
+                if (issTrail.length > 20) {
+                    issTrail[0].remove();
+                    issTrail.shift();
+                }
+                
+                // Fade old trails
+                issTrail.forEach((t, i) => {
+                    t.style.opacity = (i / issTrail.length) * 0.5;
+                });
+                
+            } catch (e) {
+                document.getElementById('iss-lat').textContent = 'NO SIGNAL';
+                document.getElementById('iss-lon').textContent = 'NO SIGNAL';
+            }
+        }
+
+        // ==================== LAUNCH COUNTDOWN ====================
+        let launchDate = null;
+        async function fetchLaunch() {
+            try {
+                const res = await fetch('https://api.spacexdata.com/v4/launches/next');
+                const data = await res.json();
+                launchDate = new Date(data.date_utc);
+                
+                const container = document.getElementById('launch-container');
+                container.innerHTML = `
+                    <div class="countdown-display">
+                        <div class="countdown-unit">
+                            <div class="countdown-number" id="cd-days">00</div>
+                            <div class="countdown-label">Days</div>
+                        </div>
+                        <div class="countdown-unit">
+                            <div class="countdown-number" id="cd-hours">00</div>
+                            <div class="countdown-label">Hours</div>
+                        </div>
+                        <div class="countdown-unit">
+                            <div class="countdown-number" id="cd-minutes">00</div>
+                            <div class="countdown-label">Minutes</div>
+                        </div>
+                        <div class="countdown-unit">
+                            <div class="countdown-number" id="cd-seconds">00</div>
+                            <div class="countdown-label">Seconds</div>
+                        </div>
+                    </div>
+                    <div class="launch-info">
+                        <div class="launch-name">${data.name}</div>
+                        <div class="launch-details">
+                            Flight ${data.flight_number} | ${data.launchpad ? 'Pad Active' : 'TBD'}<br>
+                            ${data.details || 'Mission details classified'}
+                        </div>
+                    </div>
+                `;
+                updateCountdown();
+            } catch (e) {
+                document.getElementById('launch-container').innerHTML = 
+                    '<div class="loading-text" style="color: var(--orange);">Launch data temporarily unavailable</div>';
+            }
+        }
+
+        function updateCountdown() {
+            if (!launchDate) return;
+            const now = new Date();
+            const diff = launchDate - now;
+            
+            if (diff > 0) {
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                const d = document.getElementById('cd-days');
+                const h = document.getElementById('cd-hours');
+                const m = document.getElementById('cd-minutes');
+                const s = document.getElementById('cd-seconds');
+                
+                if (d) d.textContent = String(days).padStart(2, '0');
+                if (h) h.textContent = String(hours).padStart(2, '0');
+                if (m) m.textContent = String(minutes).padStart(2, '0');
+                if (s) s.textContent = String(seconds).padStart(2, '0');
+            }
+        }
+
+        // ==================== NEO RADAR ====================
+        async function fetchNEO() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const res = await fetch(`https://api.nasa.gov/neo/rest/v1/feed?start_date=${today}&end_date=${today}&api_key=MvW2S9gIph3u7LrPt59OHMOpN58jLA9xRzlFaLb6`);
+                
+                const data = await res.json();
+
+                const neos = data.near_earth_objects[today] || [];
+                document.getElementById('neo-count').textContent = `${neos.length} OBJECTS`;
+                
+                const list = document.getElementById('neo-list');
+                list.innerHTML = '';
+                
+                neos.slice(0, 10).forEach(neo => {
+                    const isHazard = neo.is_potentially_hazardous_asteroid;
+                    const dist = parseFloat(neo.close_approach_data[0].miss_distance.kilometers).toLocaleString();
+                    const size = Math.round(neo.estimated_diameter.meters.estimated_diameter_max);
+                    
+                    const item = document.createElement('div');
+                    item.className = `neo-item ${isHazard ? 'hazard' : ''}`;
+                    item.innerHTML = `
+                        <div>
+                            <div class="neo-name">${neo.name.replace('(', '').replace(')', '')}
+                                ${isHazard ? '<span class="neo-hazard-badge">HAZARD</span>' : ''}
+                            </div>
+                            <div class="neo-size">~${size}m diameter</div>
+                        </div>
+                        <div class="neo-distance">${dist} km</div>
+                    `;
+                    list.appendChild(item);
+                });
+                
+                document.getElementById('api-status').className = 'status-dot';
+                document.getElementById('api-text').textContent = 'NASA API: ONLINE';
+            } catch (e) {
+                document.getElementById('neo-list').innerHTML = 
+                    '<div class="loading-text" style="color: var(--orange);">NEO data unavailable. Rate limit may apply.</div>';
+                document.getElementById('api-status').className = 'status-dot warning';
+                document.getElementById('api-text').textContent = 'NASA API: LIMITED';
+            }
+        }
+
+        // ==================== APOD ====================
+        let apodData = [];
+        let apodIndex = 0;
+        
+        async function fetchAPOD() {
+            try {
+                // Fetch last 7 days
+                const dates = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    dates.push(d.toISOString().split('T')[0]);
+                }
+                
+                const requests = dates.map(date => 
+                    fetch(`https://api.nasa.gov/planetary/apod?date=${date}&api_key=MvW2S9gIph3u7LrPt59OHMOpN58jLA9xRzlFaLb6`).then(r => r.json())
+                );
+                
+                apodData = await Promise.all(requests);
+                renderAPOD();
+            } catch (e) {
+                document.getElementById('apod-container').innerHTML = 
+                    '<div class="loading-text" style="color: var(--orange);">APOD data temporarily unavailable</div>';
+            }
+        }
+
+        function renderAPOD() {
+            const data = apodData[apodIndex];
+            if (!data) return;
+            
+            const container = document.getElementById('apod-container');
+            const media = data.media_type === 'video' 
+                ? `<iframe width="100%" height="280" src="${data.url}" frameborder="0" allowfullscreen style="border-radius: 8px;"></iframe>`
+                : `<img src="${data.url}" alt="${data.title}" class="apod-image" onerror="this.src='https://apod.nasa.gov/apod/image/2308/M51_Webb_960.jpg'">`
+            
+            container.innerHTML = `
+                <div class="apod-container">
+                    ${media}
+                    <div class="apod-title">${data.title}</div>
+                    <div class="apod-date">${data.date} | ${data.copyright || 'NASA'}</div>
+                    <div class="apod-desc">${data.explanation}</div>
+                    <div class="apod-nav">
+                        <button class="btn" onclick="prevAPOD()" ${apodIndex >= apodData.length - 1 ? 'disabled' : ''}>← Previous</button>
+                        <button class="btn" onclick="nextAPOD()" ${apodIndex <= 0 ? 'disabled' : ''}>Next →</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function nextAPOD() {
+            if (apodIndex > 0) { apodIndex--; renderAPOD(); }
+        }
+        function prevAPOD() {
+            if (apodIndex < apodData.length - 1) { apodIndex++; renderAPOD(); }
+        }
+
+        // ==================== SOLAR SYSTEM ====================
+        const planets = [
+            { name: 'Mercury', color: '#a0a0a0', size: 6, orbit: 40, speed: 4.1 },
+            { name: 'Venus', color: '#e6b800', size: 10, orbit: 60, speed: 1.6 },
+            { name: 'Earth', color: '#00a8ff', size: 10, orbit: 85, speed: 1.0 },
+            { name: 'Mars', color: '#ff4444', size: 8, orbit: 110, speed: 0.53 },
+            { name: 'Jupiter', color: '#d4a373', size: 22, orbit: 150, speed: 0.084 },
+            { name: 'Saturn', color: '#f4d03f', size: 18, orbit: 190, speed: 0.034 },
+            { name: 'Uranus', color: '#7de3f4', size: 14, orbit: 230, speed: 0.012 },
+            { name: 'Neptune', color: '#4169e1', size: 14, orbit: 270, speed: 0.006 }
+        ];
+
+        function initSolarSystem() {
+            const container = document.getElementById('solar-system');
+            
+            planets.forEach(p => {
+                // Orbit ring
+                const orbit = document.createElement('div');
+                orbit.className = 'orbit';
+                orbit.style.width = (p.orbit * 2) + 'px';
+                orbit.style.height = (p.orbit * 2) + 'px';
+                container.appendChild(orbit);
+                
+                // Planet
+                const planet = document.createElement('div');
+                planet.className = 'planet';
+                planet.style.width = p.size + 'px';
+                planet.style.height = p.size + 'px';
+                planet.style.background = p.color;
+                planet.dataset.angle = Math.random() * Math.PI * 2;
+                planet.dataset.orbit = p.orbit;
+                planet.dataset.speed = p.speed;
+                planet.title = p.name;
+                
+                // Label
+                const label = document.createElement('div');
+                label.className = 'planet-label';
+                label.textContent = p.name;
+                planet.appendChild(label);
+                
+                container.appendChild(planet);
+            });
+            
+            animatePlanets();
+        }
+
+        function animatePlanets() {
+            const planetEls = document.querySelectorAll('.planet');
+            planetEls.forEach(p => {
+                let angle = parseFloat(p.dataset.angle);
+                const orbit = parseFloat(p.dataset.orbit);
+                const speed = parseFloat(p.dataset.speed);
+                
+                angle += speed * 0.02;
+                p.dataset.angle = angle;
+                
+                const x = Math.cos(angle) * orbit;
+                const y = Math.sin(angle) * orbit;
+                
+                p.style.left = `calc(50% + ${x}px)`;
+                p.style.top = `calc(50% + ${y}px)`;
+            });
+            requestAnimationFrame(animatePlanets);
+        }
+
+        // ==================== MISSION LOG ====================
+        function loadLogs() {
+            const logs = JSON.parse(localStorage.getItem('orbital_logs') || '[]');
+            const list = document.getElementById('log-list');
+            
+            if (logs.length === 0) {
+                list.innerHTML = '<div style="color: var(--text-secondary); font-size: 14px; text-align: center; padding: 20px;">No mission logs recorded. Start logging your observations.</div>';
+                return;
+            }
+            
+            list.innerHTML = '';
+            logs.slice().reverse().forEach((log, index) => {
+                const entry = document.createElement('div');
+                entry.className = 'log-entry';
+                entry.innerHTML = `
+                    <span>${log.text}</span>
+                    <div style="display: flex; align-items: center;">
+                        <span class="log-time">${log.time}</span>
+                        <button class="delete-log" onclick="deleteLog(${logs.length - 1 - index})">×</button>
+                    </div>
+                `;
+                list.appendChild(entry);
+            });
+        }
+
+        function addLog() {
+            const input = document.getElementById('log-input');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            const logs = JSON.parse(localStorage.getItem('orbital_logs') || '[]');
+            logs.push({
+                text: text,
+                time: new Date().toISOString().split('T')[1].split('.')[0]
+            });
+            localStorage.setItem('orbital_logs', JSON.stringify(logs));
+            input.value = '';
+            loadLogs();
+        }
+
+        function deleteLog(index) {
+            const logs = JSON.parse(localStorage.getItem('orbital_logs') || '[]');
+            logs.splice(index, 1);
+            localStorage.setItem('orbital_logs', JSON.stringify(logs));
+            loadLogs();
+        }
+
+        document.getElementById('log-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addLog();
+        });
+
+        // ==================== INIT ====================
+        function initAll() {
+            updateISS();
+            setInterval(updateISS, 5000);
+            
+            fetchLaunch();
+            setInterval(updateCountdown, 1000);
+            
+            fetchNEO();
+            
+            fetchAPOD();
+            
+            initSolarSystem();
+            
+            loadLogs();
+        }
+
+        // Random diagnostic updates
+        setInterval(() => {
+            document.querySelectorAll('.diag-value').forEach(el => {
+                if (el.textContent.includes('%')) {
+                    const val = Math.floor(Math.random() * 15) + 80;
+                    el.textContent = val + '%';
+                    el.previousElementSibling.querySelector('.diag-fill').style.width = val + '%';
+                } else if (el.textContent.includes('MB/s')) {
+                    const val = Math.floor(Math.random() * 40) + 60;
+                    el.textContent = val + ' MB/s';
+                    el.previousElementSibling.querySelector('.diag-fill').style.width = (val/100*100) + '%';
+                } else if (el.textContent.includes('°C')) {
+                    const val = Math.floor(Math.random() * 10) + 30;
+                    el.textContent = val + '°C';
+                    el.previousElementSibling.querySelector('.diag-fill').style.width = (val/100*100) + '%';
+                }
+            });
+        }, 3000);
+    </script>
+</body>
+</html>
