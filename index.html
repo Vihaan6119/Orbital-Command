@@ -731,7 +731,7 @@
     <script>
         const NASA_KEY = 'MvW2S9gIph3u7LrPt59OHMOpN58jLA9xRzlFaLb6';
 
-        // ==================== STARFIELD ====================
+        // STARFIELD 
         const canvas = document.getElementById('starfield');
         const ctx = canvas.getContext('2d');
         let stars = [];
@@ -781,14 +781,14 @@
         }
         animateStars();
 
-        // ==================== INTRO ====================
+        // INTRO 
         function enterSystem() {
             document.getElementById('intro-overlay').classList.add('hidden');
             document.getElementById('app').style.opacity = '1';
             initAll();
         }
 
-        // ==================== CLOCK ====================
+        // CLOCK 
         function updateClock() {
             const now = new Date();
             document.getElementById('clock').textContent = 
@@ -797,39 +797,7 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // ==================== MARS ROVER ====================
-        // Guaranteed fallback: Curiosity Sol 1000 photo hosted on NASA JPL
-        const MARS_FALLBACK = {
-            img_src: 'https://mars.nasa.gov/msl-raw-images/msss/01000/mcam/1000ML0044630000405127C00_DXXX.jpg',
-            sol: 1000,
-            earth_date: '2015-05-31',
-            camera: { full_name: 'Mast Camera' }
-        };
-
-        async function fetchMars() {
-            try {
-                const res = await fetch(`https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos?sol=1000&api_key=${NASA_KEY}`);
-                const data = await res.json();
-                const photo = data.photos && data.photos.length > 0 ? data.photos[0] : MARS_FALLBACK;
-                renderMars(photo);
-            } catch (e) {
-                renderMars(MARS_FALLBACK);
-            }
-        }
-
-        function renderMars(photo) {
-            const container = document.getElementById('mars-container');
-            container.innerHTML = `
-                <img src="${photo.img_src}" alt="Mars" class="nasa-image" onerror="this.onerror=null;this.src='${MARS_FALLBACK.img_src}'">
-                <div class="nasa-meta">
-                    <span>Sol ${photo.sol}</span> | Earth Date: ${photo.earth_date}<br>
-                    ${photo.camera.full_name}
-                </div>
-            `;
-        }
-
-        // ==================== COSMIC ARCHIVE ====================
-        // Uses APOD API (already proven working) with a random past date
+        // COSMIC ARCHIVE 
         const ARCHIVE_FALLBACK = {
             url: 'https://apod.nasa.gov/apod/image/2207/JWST_First_Images_Carina_960.jpg',
             title: 'JWST First Image: Cosmic Cliffs in the Carina Nebula',
@@ -870,7 +838,7 @@
             `;
         }
 
-        // ==================== NEO RADAR ====================
+        // NEO RADAR 
         async function fetchNEO() {
             try {
                 const today = new Date().toISOString().split('T')[0];
@@ -912,7 +880,7 @@
             }
         }
 
-        // ==================== APOD ====================
+        // APOD 
         let apodData = [];
         let apodIndex = 0;
 
@@ -969,7 +937,7 @@
             if (apodIndex < apodData.length - 1) { apodIndex++; renderAPOD(); }
         }
 
-        // ==================== SOLAR SYSTEM ====================
+        // SOLAR SYSTEM 
         const planets = [
             { name: 'Mercury', color: '#a0a0a0', size: 6, orbit: 40, speed: 4.1 },
             { name: 'Venus', color: '#e6b800', size: 10, orbit: 60, speed: 1.6 },
@@ -1026,7 +994,7 @@
             requestAnimationFrame(animatePlanets);
         }
 
-        // ==================== MISSION LOG ====================
+        // MISSION LOG 
         function loadLogs() {
             const logs = JSON.parse(localStorage.getItem('orbital_logs') || '[]');
             const list = document.getElementById('log-list');
@@ -1077,7 +1045,7 @@
             if (e.key === 'Enter') addLog();
         });
 
-        // ==================== INIT ====================
+        // INIT 
         function initAll() {
             fetchArchive();
             fetchNEO();
