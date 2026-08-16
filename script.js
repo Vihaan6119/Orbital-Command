@@ -86,12 +86,12 @@ async function fetchAPOD() {
         if (apodData.length > 0) {
             renderAPOD();
             document.getElementById('apod-nav').style.display = 'flex';
-            document.getElementById('api-status').textContent = 'nasa api: online ✓';
+            document.getElementById('api-status').textContent = 'nasa api: online';
             document.getElementById('api-status').style.color = '#4ade80';
         }
     } catch (e) {
         document.getElementById('apod-container').innerHTML = 
-            '<div class="loading">Couldn\'t load space pics right now. Try again later!</div>';
+            '<div class="loading">couldn\'t load the pictures. try again later</div>';
     }
 }
 
@@ -138,7 +138,7 @@ async function fetchNEO() {
         const data = await res.json();
 
         const neos = data.near_earth_objects[today] || [];
-        document.getElementById('neo-count').textContent = `${neos.length} objects nearby today`;
+        document.getElementById('neo-count').textContent = `${neos.length} object${neos.length === 1 ? '' : 's'} nearby today`;
 
         const list = document.getElementById('neo-list');
         list.innerHTML = '';
@@ -174,7 +174,7 @@ async function fetchNEO() {
     }
 }
 
-// Weight Calculator - NEW FEATURE
+// Weight Calculator
 const planetGravity = {
     'Mercury': 0.38,
     'Venus': 0.91,
@@ -208,23 +208,13 @@ document.getElementById('earth-weight').addEventListener('input', function(e) {
     resultsDiv.innerHTML = html;
 });
 
-// Random Space Facts - NEW FEATURE
+// Random Space Facts 
 const spaceFacts = [
     "A day on Venus is longer than a year on Venus! It takes 243 Earth days to rotate once but only 225 days to orbit the Sun.",
     "Neutron stars are so dense that a teaspoon of their material would weigh about 6 billion tons on Earth.",
-    "Space is completely silent. There's no medium for sound waves to travel through in the vacuum of space.",
+    "Sound cannot travel through the vacuum of space, so astronauts rely on radios to communicate.",
     "The footprints left by Apollo astronauts on the Moon will likely remain there for at least 100 million years.",
     "There's a planet made largely of diamond, called 55 Cancri e. It's twice the size of Earth!",
-    "The Sun accounts for 99.86% of all the mass in our entire solar system.",
-    "One million Earths could fit inside the Sun. Mind-blowing, right?",
-    "The largest known star, UY Scuti, is so big that if it replaced our Sun, its surface would extend beyond Jupiter's orbit.",
-    "There are more stars in the universe than grains of sand on all of Earth's beaches combined.",
-    "Astronauts can grow up to 2 inches taller in space because their spines elongate without gravity compressing them.",
-    "Saturn would float in water if you could find a bathtub big enough, because it's less dense than water!",
-    "The Milky Way galaxy is moving through space at about 1.3 million miles per hour.",
-    "There's a massive cloud of alcohol in Sagittarius B2, a gas cloud near the center of our galaxy.",
-    "Olympus Mons on Mars is the largest volcano in the solar system - about three times taller than Mount Everest!",
-    "A year on Mercury is just 88 Earth days, but a single day lasts 59 Earth days."
 ];
 
 function showRandomFact() {
@@ -339,7 +329,7 @@ function animatePlanets() {
         let angle = parseFloat(p.dataset.angle);
         const orbit = parseFloat(p.dataset.orbit);
         const speed = parseFloat(p.dataset.speed);
-        angle += speed * 0.015;
+        angle += speed * 0.005;
         p.dataset.angle = angle;
         const x = Math.cos(angle) * orbit;
         const y = Math.sin(angle) * orbit;

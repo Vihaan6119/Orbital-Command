@@ -7,16 +7,14 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Space+Grotesk:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 </head>
-<body>
-    <div class="noise-overlay"></div>
-    
+<body>    
     <div class="container">
         <header class="main-header">
             <div class="header-content">
                 <h1 class="site-title">
                     <span class="emoji"></span>
                     Orbital Command
-                    <span class="subtitle">// by Vihaan</span>
+                    <span class="subtitle">by Vihaan</span>
                 </h1>
                 <div class="header-meta">
                     <span class="clock" id="clock">--:--:-- UTC</span>
@@ -24,17 +22,16 @@
                 </div>
             </div>
             <div class="handwritten-note">
-                <p>playing with NASA APIs </p>
+                <p></p>
             </div>
         </header>
 
         <main class="content-grid">
             <!-- APOD Section -->
             <section class="card card-apod">
-                <div class="card-corner top-left"></div>
                 <h2 class="card-title">Today in Space </h2>
                 <div id="apod-container">
-                    <div class="loading">loading something cool...</div>
+                    <div class="loading">loading...</div>
                 </div>
                 <div class="apod-nav" id="apod-nav" style="display: none;">
                     <button class="nav-btn" id="prev-btn" onclick="prevAPOD()">← older</button>
@@ -44,7 +41,6 @@
 
             <!-- NEO Radar -->
             <section class="card card-neo">
-                <div class="card-corner top-right"></div>
                 <h2 class="card-title">Nearby Rocks </h2>
                 <p class="card-subtitle" id="neo-count">scanning...</p>
                 <div class="neo-list" id="neo-list">
@@ -52,9 +48,8 @@
                 </div>
             </section>
 
-            <!-- Weight Calculator - NEW FEATURE -->
+            <!-- Weight Calculator -->
             <section class="card card-weight">
-                <div class="card-corner bottom-left"></div>
                 <h2 class="card-title">Planet Weight Calculator </h2>
                 <p class="card-subtitle">How much would you weigh elsewhere?</p>
                 <div class="weight-calculator">
@@ -63,14 +58,13 @@
                 </div>
             </section>
 
-            <!-- Random Space Fact - NEW FEATURE -->
+            <!-- Random Space Fact -->
             <section class="card card-facts">
-                <div class="card-corner bottom-right"></div>
                 <h2 class="card-title">Did You Know? 💡</h2>
                 <div class="fact-container" id="fact-container">
-                    <p class="fact-text">Click the button to learn something wild about space!</p>
+                    <p class="fact-text">Click the button to learn something new about space</p>
                 </div>
-                <button class="fact-btn" onclick="showRandomFact()">Show me a fact!</button>
+                <button class="fact-btn" onclick="showRandomFact()">Show me a fact</button>
             </section>
 
             <!-- Mission Log -->
@@ -81,7 +75,7 @@
                     <button class="log-btn" onclick="addLog()">Add</button>
                 </div>
                 <div class="log-list" id="log-list">
-                    <p class="empty-log">Nothing here yet. Start documenting your space journey!</p>
+                    <p class="empty-log">Nothing here yet. Start documenting your space journey</p>
                 </div>
             </section>
 
@@ -98,13 +92,13 @@
             <section class="card card-archive">
                 <h2 class="card-title">Random from the Archives </h2>
                 <div id="archive-container">
-                    <div class="loading">digging through history...</div>
+                    <div class="loading">loading archive...</div>
                 </div>
             </section>
         </main>
 
         <footer class="main-footer">
-            <p class="footer-note">Made with curiosity and too much coffee</p>
+            <p class="footer-note">End of Page</p>
             <p class="footer-tech">
                  
                 <a href="https://api.nasa.gov" target="_blank">NASA APIs</a>
